@@ -55,7 +55,8 @@ def analyze_with_openai(product_text, transcript_text):
         if not openai.api_key:
             raise ValueError("OpenAI API key not found in environment variables")
 
-        system_message = "You are a product analysis expert who provides concise, actionable insights."
+        system_message = """You are a product analysis expert who provides concise, actionable insights.
+        For each section, provide 3-5 unique, non-overlapping points. Each point should be specific to that section and not repeated elsewhere."""
         
         user_message = f"""
         Product Context:
@@ -64,15 +65,27 @@ def analyze_with_openai(product_text, transcript_text):
         Customer Transcript:
         {transcript_text}
 
-        Please analyze the customer transcript and provide insights in the following format:
-        1. Key Feature Recommendations
-        2. Product Requirements
-        3. User Objectives
-        4. User Journey
-        5. UX Considerations
-        6. Technical Requirements
+        Analyze the customer transcript and provide insights in the following format. For each section, provide 3-5 UNIQUE points that are specific to that section:
 
-        Keep the response concise and actionable.
+        [KEY FEATURES]
+        - (list unique feature recommendations)
+
+        [PRODUCT REQUIREMENTS]
+        - (list unique product requirements)
+
+        [USER OBJECTIVES]
+        - (list unique user objectives)
+
+        [USER JOURNEY]
+        - (list unique journey points)
+
+        [UX CONSIDERATIONS]
+        - (list unique UX points)
+
+        [TECHNICAL REQUIREMENTS]
+        - (list unique technical requirements)
+
+        Ensure each point is unique and relevant to its specific section. Do not repeat information across sections.
         """
 
         response = openai.ChatCompletion.create(
@@ -81,7 +94,7 @@ def analyze_with_openai(product_text, transcript_text):
                 {"role": "system", "content": system_message},
                 {"role": "user", "content": user_message}
             ],
-            max_tokens=1000,
+            max_tokens=1500,
             temperature=0.7
         )
 

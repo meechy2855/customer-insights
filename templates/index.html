@@ -197,6 +197,7 @@
             formData.append('product_context', productContext);
             formData.append('customer_transcript', customerTranscript);
             
+            // Show loading state
             document.getElementById('loading').style.display = 'block';
             document.getElementById('error').style.display = 'none';
             document.getElementById('results').style.display = 'none';
@@ -209,14 +210,13 @@
                 
                 const data = await response.json();
                 
-                if (data.error) {
-                    showError(data.error);
-                } else if (data.analysis) {
+                if (response.ok) {
                     showResults(data.analysis);
+                } else {
+                    showError(data.error || 'An error occurred');
                 }
             } catch (error) {
                 showError('An error occurred while processing your request');
-                console.error('Error:', error);
             } finally {
                 document.getElementById('loading').style.display = 'none';
             }
@@ -226,64 +226,70 @@
             const errorDiv = document.getElementById('error');
             errorDiv.textContent = message;
             errorDiv.style.display = 'block';
+            document.getElementById('results').style.display = 'none';
         }
 
         function showResults(results) {
-            const resultsDiv = document.getElementById('results');
-            resultsDiv.style.display = 'block';
-            
-            // Parse the results into sections
+            // Parse the sections
             const sections = {
-                features: document.getElementById('features'),
-                requirements: document.getElementById('requirements'),
-                objectives: document.getElementById('objectives'),
-                journey: document.getElementById('journey'),
-                ux: document.getElementById('ux'),
-                technical: document.getElementById('technical')
+                'features': '[KEY FEATURES]',
+                'requirements': '[PRODUCT REQUIREMENTS]',
+                'objectives': '[USER OBJECTIVES]',
+                'journey': '[USER JOURNEY]',
+                'ux': '[UX CONSIDERATIONS]',
+                'technical': '[TECHNICAL REQUIREMENTS]'
             };
-            
-            // Split the text into sections and format them
-            const lines = results.split('\n');
+
+            // Split the content by sections
+            const content = results.split('\n');
             let currentSection = null;
-            let currentContent = [];
-            
-            lines.forEach(line => {
-                if (line.trim() === '') return;
-                
-                if (line.startsWith('1. Key Feature')) currentSection = 'features';
-                else if (line.startsWith('2. Product Requirements')) currentSection = 'requirements';
-                else if (line.startsWith('3. User Objectives')) currentSection = 'objectives';
-                else if (line.startsWith('4. User Journey')) currentSection = 'journey';
-                else if (line.startsWith('5. UX Considerations')) currentSection = 'ux';
-                else if (line.startsWith('6. Technical Requirements')) currentSection = 'technical';
-                else if (currentSection && sections[currentSection]) {
-                    currentContent.push(line.trim());
-                    if (currentContent.length > 0) {
-                        const contentHtml = formatContent(currentContent);
-                        sections[currentSection].innerHTML = contentHtml;
-                    }
+            const parsedContent = {};
+
+            content.forEach(line => {
+                // Check if this line is a section header
+                const sectionEntry = Object.entries(sections).find(([_, header]) => 
+                    line.trim().toUpperCase() === header);
+
+                if (sectionEntry) {
+                    currentSection = sectionEntry[0];
+                    parsedContent[currentSection] = [];
+                } else if (currentSection && line.trim()) {
+                    // Add non-empty lines to current section
+                    parsedContent[currentSection].push(line.trim());
                 }
             });
+
+            // Update each section's content
+            Object.keys(sections).forEach(sectionId => {
+                const element = document.getElementById(sectionId);
+                if (element && parsedContent[sectionId]) {
+                    element.innerHTML = formatContent(parsedContent[sectionId]);
+                }
+            });
+
+            document.getElementById('results').style.display = 'block';
         }
-        
+
         function formatContent(lines) {
-            // Remove any numbered bullets (1., 2., etc.)
-            lines = lines.map(line => line.replace(/^\d+\.\s*/, ''));
-            
-            // If the lines look like a list (start with - or •), format as ul
-            if (lines.some(line => line.trim().startsWith('-') || line.trim().startsWith('•'))) {
-                const listItems = lines
-                    .filter(line => line.trim())
-                    .map(line => `<li>${line.replace(/^[-•]\s*/, '')}</li>`)
-                    .join('');
-                return `<ul>${listItems}</ul>`;
+            // Filter out empty lines and section headers
+            const contentLines = lines.filter(line => 
+                line && 
+                !line.startsWith('[') && 
+                !line.endsWith(']') &&
+                line.trim() !== ''
+            );
+
+            // If the content is already in a list format (starts with - or *), keep it
+            // Otherwise, wrap it in a list
+            if (contentLines.length === 0) {
+                return '<p>No specific insights for this section.</p>';
             }
-            
-            // Otherwise, format as paragraphs
-            return lines
-                .filter(line => line.trim())
-                .map(line => `<p>${line}</p>`)
-                .join('');
+
+            if (contentLines[0].trim().startsWith('-') || contentLines[0].trim().startsWith('*')) {
+                return `<ul>${contentLines.map(line => `<li>${line.replace(/^[-*]\s*/, '')}</li>`).join('')}</ul>`;
+            }
+
+            return `<ul>${contentLines.map(line => `<li>${line}</li>`).join('')}</ul>`;
         }
     </script>
 </body>
