@@ -55,8 +55,17 @@ def analyze_with_openai(product_text, transcript_text):
         if not openai.api_key:
             raise ValueError("OpenAI API key not found in environment variables")
 
-        system_message = """You are a product analysis expert who provides concise, actionable insights.
-        For each section, provide 3-5 unique, non-overlapping points. Each point should be specific to that section and not repeated elsewhere."""
+        system_message = """You are a product analysis expert who provides distinct, non-overlapping insights for different aspects of product development.
+        Each section must contain completely unique information that does not appear in any other section.
+        
+        - KEY FEATURES: Focus only on specific product features and capabilities
+        - PRODUCT REQUIREMENTS: Focus only on business and functional requirements
+        - USER OBJECTIVES: Focus only on user goals and what they want to achieve
+        - USER JOURNEY: Focus only on the step-by-step flow of user interactions
+        - UX CONSIDERATIONS: Focus only on interface and experience design elements
+        - TECHNICAL REQUIREMENTS: Focus only on implementation and infrastructure needs
+        
+        Never repeat the same insight in multiple sections. Each point must be unique to its section."""
         
         user_message = f"""
         Product Context:
@@ -65,28 +74,32 @@ def analyze_with_openai(product_text, transcript_text):
         Customer Transcript:
         {transcript_text}
 
-        Analyze the customer transcript and provide insights in the following format. For each section, provide 3-5 UNIQUE points that are specific to that section:
+        Analyze the documents and provide strictly distinct insights for each section. Each insight must be unique and relevant only to its specific section:
 
         [KEY FEATURES]
-        - (list unique feature recommendations)
+        (List 3-4 specific product features and capabilities ONLY)
 
         [PRODUCT REQUIREMENTS]
-        - (list unique product requirements)
+        (List 3-4 business and functional requirements ONLY)
 
         [USER OBJECTIVES]
-        - (list unique user objectives)
+        (List 3-4 user goals and desired outcomes ONLY)
 
         [USER JOURNEY]
-        - (list unique journey points)
+        (List 3-4 specific steps in the user's interaction flow ONLY)
 
         [UX CONSIDERATIONS]
-        - (list unique UX points)
+        (List 3-4 interface and experience design elements ONLY)
 
         [TECHNICAL REQUIREMENTS]
-        - (list unique technical requirements)
+        (List 3-4 implementation and infrastructure needs ONLY)
 
-        Ensure each point is unique and relevant to its specific section. Do not repeat information across sections.
-        """
+        IMPORTANT:
+        1. Each section must contain completely different information
+        2. Never mention the same concept in multiple sections
+        3. If a point could fit in multiple sections, choose the most appropriate one and use different points for other sections
+        4. Each bullet point should be a complete, specific insight
+        5. Ensure each section focuses strictly on its designated aspect as defined above"""
 
         response = openai.ChatCompletion.create(
             model="gpt-3.5-turbo",
