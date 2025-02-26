@@ -18,7 +18,7 @@ An AI-powered tool that analyzes customer feedback and generates actionable prod
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/yourusername/customer-insights.git
+git clone https://github.com/meechy2855/customer-insights.git
 cd customer-insights
 ```
 
